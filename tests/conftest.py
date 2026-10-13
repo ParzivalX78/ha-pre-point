@@ -29,10 +29,12 @@ def mock_api():
     api.async_get_sessions = AsyncMock(return_value=load("sessions"))
     api.async_get_access_token = AsyncMock(return_value="not-a-real-token")
     api.async_close = AsyncMock()
+    api.async_forget_stored_tokens = AsyncMock()
     with (
-        patch("custom_components.pre_point.PREPointApi", return_value=api),
-        patch("custom_components.pre_point.config_flow.PREPointApi", return_value=api),
+        patch("custom_components.pre_point.PREPointApi", return_value=api) as setup_cls,
+        patch("custom_components.pre_point.config_flow.PREPointApi", return_value=api) as flow_cls,
     ):
+        api.setup_cls, api.flow_cls = setup_cls, flow_cls
         yield api
 
 

@@ -12,8 +12,10 @@ import time
 from urllib.parse import parse_qs, urlencode, urljoin, urlparse
 
 import aiohttp
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.storage import Store
 
-from .const import AUTH_BASE, CLIENT_ID, REALM, REDIRECT_URI
+from .const import AUTH_BASE, CLIENT_ID, DOMAIN, REALM, REDIRECT_URI
 
 _LOGGER = logging.getLogger(__name__)
 OIDC = f"{AUTH_BASE}/auth/realms/{REALM}/protocol/openid-connect"
@@ -46,9 +48,18 @@ class PREPointAuth:
     Transient/network/server errors allow exactly one retry after 15 minutes.
     """
 
-    def __init__(self, username: str, password: str) -> None:
+    def __init__(
+        self, hass: HomeAssistant, entry_id: str | None, username: str, password: str
+    ) -> None:
+        self.hass = hass
         self.username = username
         self.password = password
+        self._token_store: Store | None = (
+            Store(hass, 1, f"{DOMAIN}_{entry_id}_auth", private=True)
+            if entry_id
+            else None
+        )
+        self._stored_token_loaded = False
         self.session: aiohttp.ClientSession | None = None
         self.access_token: str | None = None
         self.refresh_token: str | None = None
@@ -109,13 +120,53 @@ class PREPointAuth:
         )
         return any(pattern in text for pattern in patterns)
 
-    def _save_tokens(self, data: dict) -> None:
+    async def _load_stored_refresh_token(self) -> None:
+        """Load a previously stored refresh token once."""
+        if self._stored_token_loaded:
+            return
+        self._stored_token_loaded = True
+        if self._token_store is None:
+            return
+        try:
+            stored = await self._token_store.async_load()
+        except Exception as err:
+            _LOGGER.warning(
+                "Could not load stored PRE Point auth state (error type: %s).",
+                type(err).__name__,
+            )
+            return
+        if stored and isinstance(stored.get("refresh_token"), str):
+            self.refresh_token = stored["refresh_token"]
+
+    async def _save_tokens(self, data: dict) -> None:
         self.access_token = data["access_token"]
         self.refresh_token = data.get("refresh_token", self.refresh_token)
         self.expiry = time.time() + int(data.get("expires_in", 300)) - 30
         self._auth_retry_at = None
         self._auth_retry_used = False
         self._auth_locked = False
+        if self.refresh_token and self._token_store is not None:
+            try:
+                await self._token_store.async_save(
+                    {"refresh_token": self.refresh_token}
+                )
+            except Exception as err:
+                _LOGGER.warning(
+                    "Could not persist PRE Point refresh token (error type: %s).",
+                    type(err).__name__,
+                )
+
+    async def _clear_stored_refresh_token(self) -> None:
+        self.refresh_token = None
+        if self._token_store is None:
+            return
+        try:
+            await self._token_store.async_remove()
+        except Exception as err:
+            _LOGGER.warning(
+                "Could not remove stored PRE Point refresh token (error type: %s).",
+                type(err).__name__,
+            )
 
     async def _login(self) -> None:
         http = await self._http()
@@ -240,7 +291,7 @@ class PREPointAuth:
                 raise PREPointError(
                     f"Výměna autorizačního kódu selhala (HTTP {resp.status})."
                 )
-        self._save_tokens(data)
+        await self._save_tokens(data)
 
     async def _login_with_limited_retry(self) -> None:
         if self._auth_locked:
@@ -277,7 +328,7 @@ class PREPointAuth:
                 self._auth_locked = True
                 self._auth_retry_at = None
                 self._auth_retry_used = False
-                _LOGGER.error("PRE Point requires manual reauthentication: %s", err)
+                _LOGGER.error("PRE Point requires manual reauthentication.")
                 raise
             await self._schedule_or_lock_retry(err, retrying)
         except (aiohttp.ClientError, asyncio.TimeoutError, PREPointError) as err:
@@ -292,30 +343,33 @@ class PREPointAuth:
             self._auth_locked = True
             _LOGGER.error(
                 "PRE Point transient authentication failure persisted after the "
-                "single delayed retry; manual reauthentication is required: %s",
-                err,
+                "single delayed retry; manual reauthentication is required "
+                "(error type: %s).",
+                type(err).__name__,
             )
             raise PreAuthError(
                 "PRE Point se nepodařilo přihlásit ani při jediném opakovaném "
                 "pokusu. Automatické pokusy jsou zastavené; ověřte stav služby "
                 "a přihlaste se znovu ručně v Home Assistantu.",
                 reauth_required=True,
-            ) from err
+            ) from None
 
         self._auth_retry_at = time.monotonic() + AUTH_RETRY_DELAY_SECONDS
         self._auth_retry_used = False
         _LOGGER.warning(
             "PRE Point transient authentication failure. One retry is scheduled "
-            "in 15 minutes; no login attempts will be made before then: %s",
-            err,
+            "in 15 minutes; no login attempts will be made before then "
+            "(error type: %s).",
+            type(err).__name__,
         )
         raise PreAuthError(
             "Přihlášení PRE Point dočasně selhalo. Jediný opakovaný pokus proběhne "
             "za 15 minut; do té doby se znovu přihlašovat nebude."
-        ) from err
+        ) from None
 
     async def async_get_access_token(self) -> str:
         async with self.lock:
+            await self._load_stored_refresh_token()
             if self._auth_locked:
                 raise PreAuthError(
                     "Automatické přihlašování je zastavené. Je nutné ruční "
@@ -338,14 +392,14 @@ class PREPointAuth:
                     ) as resp:
                         data = await resp.json(content_type=None)
                         if resp.status < 400 and data.get("access_token"):
-                            self._save_tokens(data)
+                            await self._save_tokens(data)
                             return self.access_token or ""
                         if resp.status >= 500:
                             raise PREPointError(
                                 f"PRE token server je dočasně nedostupný (HTTP {resp.status})."
                             )
                         # A rejected/expired refresh token requires a new login.
-                        self.refresh_token = None
+                        await self._clear_stored_refresh_token()
                 except (aiohttp.ClientError, asyncio.TimeoutError) as err:
                     raise PREPointError(
                         "Síťová chyba při obnově PRE Point tokenu; další pokus "
@@ -361,6 +415,12 @@ class PREPointAuth:
         if not self.access_token:
             raise PreAuthError("PRE Point nevrátilo access token.")
         return self.access_token
+
+    async def async_forget_stored_tokens(self) -> None:
+        """Forget persisted refresh credentials for this config entry."""
+        await self._clear_stored_refresh_token()
+        self.access_token = None
+        self.expiry = 0.0
 
     async def async_close(self) -> None:
         if self.session and not self.session.closed:

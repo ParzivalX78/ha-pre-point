@@ -193,11 +193,12 @@ class PrePointHistoryCoordinator(_BackoffCoordinator[HistoryData]):
         try:
             raw = await self.api.async_get_sessions()
         except PreAuthError as err:
+            # `from None`: no chained traceback that could carry sign-in details.
             if err.reauth_required:
-                raise ConfigEntryAuthFailed(str(err)) from err
+                raise ConfigEntryAuthFailed(str(err)) from None
             # auth.py allows one more attempt after 15 minutes; come back then.
             self.update_interval = AUTH_RETRY_INTERVAL
-            raise UpdateFailed(str(err)) from err
+            raise UpdateFailed(str(err)) from None
         except PreRateLimitError as err:
             self._back_off(err.retry_after)
             raise UpdateFailed(str(err)) from err

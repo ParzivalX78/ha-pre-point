@@ -101,18 +101,23 @@ def _multi_select(options: list[selector.SelectOptionDict]) -> selector.SelectSe
     )
 
 
-async def _test_credentials(username: str, password: str) -> tuple[str | None, list[Any]]:
-    """Return (error key, raw history). Sign-in itself is done by auth.py."""
-    api = PREPointApi(username, password)
+async def _test_credentials(
+    hass: HomeAssistant, username: str, password: str
+) -> tuple[str | None, list[Any]]:
+    """Return (error key, raw history). Sign-in itself is done by auth.py.
+
+    `entry_id=None`: nothing is persisted before the entry exists.
+    """
+    api = PREPointApi(hass, None, username, password)
     try:
         raw = await api.async_get_sessions()
     except PreInvalidCredentialsError:
         return "invalid_auth", []
     except PreAuthError as err:
-        _LOGGER.warning("PRE Point sign-in failed: %s", err)
+        _LOGGER.warning("PRE Point sign-in failed (%s)", type(err).__name__)
         return "pre_login_failed", []
     except PREPointError as err:
-        _LOGGER.warning("PRE Point API test failed: %s", err)
+        _LOGGER.warning("PRE Point API test failed (%s)", type(err).__name__)
         return "cannot_connect", []
     except Exception:
         _LOGGER.exception("Unexpected PRE Point setup error")
@@ -213,7 +218,7 @@ class PREPointConfigFlow(ConfigFlow, domain=DOMAIN):
             username = user_input[CONF_USERNAME].strip()
             await self.async_set_unique_id(username.lower())
             self._abort_if_unique_id_configured()
-            error, raw = await _test_credentials(username, user_input[CONF_PASSWORD])
+            error, raw = await _test_credentials(self.hass, username, user_input[CONF_PASSWORD])
             if error is None:
                 self._data = {CONF_USERNAME: username, CONF_PASSWORD: user_input[CONF_PASSWORD]}
                 self._picker = LocationPicker(self.hass, _charged_evse_ids(raw))
@@ -295,7 +300,7 @@ class PREPointConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         if user_input is not None:
             error, _ = await _test_credentials(
-                entry.data[CONF_USERNAME], user_input[CONF_PASSWORD]
+                self.hass, entry.data[CONF_USERNAME], user_input[CONF_PASSWORD]
             )
             if error is None:
                 return self.async_update_reload_and_abort(

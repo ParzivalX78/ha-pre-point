@@ -86,6 +86,16 @@ access_token = await token_provider.async_get_access_token()
 - Při dočasném problému zůstane integrace načtená (stanice běží dál), aby HA
   opakovaným spouštěním nezkracoval tu patnáctiminutovou pauzu.
 
+**Uložený token:** obnovovací token (platí 60 dní) se ukládá přes
+`Store(..., private=True)` do `.storage/pre_point_<entry_id>_auth`, takže restart
+ani změna voleb nedělá nové přihlášení heslem. Access token zůstává jen v paměti.
+Když PRE uložený token odmítne, smaže se a platí běžná pravidla přihlášení.
+Test přihlášení v nastavení běží s `entry_id=None` a nic neukládá; při odebrání
+integrace se uložený token smaže.
+
+**Logy** neobsahují text výjimek ani adresy přesměrování (mohly by nést OAuth
+`code=`), jen obecné zprávy a typ chyby.
+
 ## Grafy
 
 Na nástěnku (**Upravit → Přidat kartu → Ruční**):

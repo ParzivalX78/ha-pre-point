@@ -33,7 +33,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: PrePointConfigEntry) -> 
     # The public map first: if it is down, setup is retried before any sign-in.
     await stations.async_config_entry_first_refresh()
 
-    api = PREPointApi(entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD])
+    api = PREPointApi(hass, entry.entry_id, entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD])
 
     async def _close(_: Event | None = None) -> None:
         await api.async_close()
@@ -86,6 +86,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: PrePointConfigEntry) ->
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: PrePointConfigEntry) -> None:
-    """Forget the session archive and statistics when the account is removed."""
+    """Forget the stored refresh token, session archive and statistics."""
+    api = PREPointApi(hass, entry.entry_id, entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD])
+    try:
+        await api.async_forget_stored_tokens()
+    finally:
+        await api.async_close()
     await SessionArchive(hass, entry.entry_id).async_remove()
     async_clear_statistics(hass)

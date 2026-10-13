@@ -229,6 +229,8 @@ async def test_config_flow(hass: HomeAssistant, mock_api, mock_poi) -> None:
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"] == ENTRY_DATA
+    # The sign-in test runs before the entry exists: nothing may be persisted.
+    assert all(call.args[1] is None for call in mock_api.flow_cls.call_args_list)
     assert result["options"]["locations"] == ["CZT0001"]
     assert result["options"]["price_ufc"] == 14.0
     await hass.async_block_till_done()
@@ -255,3 +257,20 @@ async def test_sessions_survive_in_archive(
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     assert _state(hass, entry, "sessions").state == "4"
+
+
+async def test_removal_forgets_stored_token(hass: HomeAssistant, mock_api, mock_poi) -> None:
+    entry = await _setup(hass)
+    assert mock_api.setup_cls.call_args.args[1] == entry.entry_id
+    await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    mock_api.async_forget_stored_tokens.assert_awaited_once()
+
+
+async def test_token_store_only_with_entry_id(hass: HomeAssistant) -> None:
+    """auth.py: no Store without an entry id (only the constructor is used here)."""
+    from custom_components.pre_point.auth import PREPointAuth
+
+    assert PREPointAuth(hass, None, "u@example.com", "x")._token_store is None
+    store = PREPointAuth(hass, "abc", "u@example.com", "x")._token_store
+    assert store is not None and store.key == "pre_point_abc_auth"

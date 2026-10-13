@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Protocol
 
 import aiohttp
+from homeassistant.core import HomeAssistant
 
 from .auth import PREPointAuth, PREPointError, PreAuthError, PreInvalidCredentialsError
 from .const import API_BASE, HISTORY_PERIODS, REQUEST_TIMEOUT, SESSIONS_PATH
@@ -37,8 +38,11 @@ class PreRateLimitError(PREPointError):
 class PREPointApi:
     """PRE Point API client; authentication details live in auth.py."""
 
-    def __init__(self, username: str, password: str) -> None:
-        self.auth = PREPointAuth(username, password)
+    def __init__(
+        self, hass: HomeAssistant, entry_id: str | None, username: str, password: str
+    ) -> None:
+        """`entry_id=None` (sign-in test in the config flow) persists nothing."""
+        self.auth = PREPointAuth(hass, entry_id, username, password)
 
     async def async_get_access_token(self) -> str:
         """Implement PreTokenProvider."""
@@ -62,9 +66,8 @@ class PREPointApi:
                     return resp.status, None
                 return resp.status, await resp.json(content_type=None)
         except (aiohttp.ClientError, TimeoutError) as err:
-            raise PREPointError(
-                f"PRE API není dostupné: {err or type(err).__name__}"
-            ) from err
+            # Only the error type: the text may contain a URL.
+            raise PREPointError(f"PRE API není dostupné ({type(err).__name__}).") from None
 
     async def async_get_sessions(self, periods: int = HISTORY_PERIODS) -> Any:
         """Fetch the raw charging-session response (current month + `periods` before)."""
@@ -80,6 +83,10 @@ class PREPointApi:
         if status >= 400:
             raise PREPointError(f"Endpoint historie vrátil HTTP {status}.")
         return data
+
+    async def async_forget_stored_tokens(self) -> None:
+        """Remove persisted refresh credentials for this config entry."""
+        await self.auth.async_forget_stored_tokens()
 
     async def async_close(self) -> None:
         """Close the HTTP session."""
