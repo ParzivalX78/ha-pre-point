@@ -112,11 +112,30 @@ cards:
   - type: statistics-graph
     title: PRE po měsících
     entities:
-      - pre_point:charged_energy
+      - entity: pre_point:charged_energy
+        color: "#f4bd4a"
     stat_types: [change]
     period: month
     chart_type: bar
     days_to_show: 365
+```
+
+Žlutá `#f4bd4a` odpovídá druhé barvě palety Home Assistantu; integrace E.ON Drive
+používá modrou `#4269d0`. Ve společném grafu stačí dát obě statistiky do `entities`
+s těmito barvami:
+
+```yaml
+type: statistics-graph
+title: Nabitá energie – E.ON a PRE
+entities:
+  - entity: eon_drive:charged_energy
+    color: "#4269d0"
+  - entity: pre_point:charged_energy
+    color: "#f4bd4a"
+stat_types: [change]
+period: month
+chart_type: bar
+days_to_show: 365
 ```
 
 ## Vývoj
