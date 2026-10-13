@@ -313,6 +313,7 @@ class PREPointAuth:
             self._auth_retry_used = True
 
         try:
+            _LOGGER.info("PRE Point: přihlášení heslem")
             await self._login()
         except PreInvalidCredentialsError:
             self._auth_locked = True
@@ -393,6 +394,7 @@ class PREPointAuth:
                         data = await resp.json(content_type=None)
                         if resp.status < 400 and data.get("access_token"):
                             await self._save_tokens(data)
+                            _LOGGER.info("PRE Point: přihlášení obnoveno uloženým tokenem")
                             return self.access_token or ""
                         if resp.status >= 500:
                             raise PREPointError(
