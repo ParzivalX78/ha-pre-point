@@ -1,12 +1,21 @@
 """PRE Point API client and public token-provider interface."""
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Any, Protocol
 
 import aiohttp
 
 from .auth import PREPointAuth, PREPointError, PreAuthError, PreInvalidCredentialsError
-from .const import API_BASE, SESSIONS_PATH
+from .const import API_BASE, HISTORY_PERIODS, REQUEST_TIMEOUT, SESSIONS_PATH
+
+__all__ = [
+    "PREPointApi",
+    "PREPointError",
+    "PreAuthError",
+    "PreInvalidCredentialsError",
+    "PreRateLimitError",
+    "PreTokenProvider",
+]
 
 
 class PreTokenProvider(Protocol):
@@ -17,56 +26,61 @@ class PreTokenProvider(Protocol):
         ...
 
 
+class PreRateLimitError(PREPointError):
+    """The API asked us to slow down (HTTP 429)."""
+
+    def __init__(self, retry_after: int | None = None) -> None:
+        super().__init__("PRE API omezilo počet požadavků (HTTP 429).")
+        self.retry_after = retry_after
+
+
 class PREPointApi:
     """PRE Point API client; authentication details live in auth.py."""
 
     def __init__(self, username: str, password: str) -> None:
         self.auth = PREPointAuth(username, password)
-        # Preserve the existing public surface for code that uses api.session.
-        self.session: aiohttp.ClientSession | None = None
 
     async def async_get_access_token(self) -> str:
-        """Implement PreTokenProvider for colleague's modules."""
-        token = await self.auth.async_get_access_token()
-        self.session = self.auth.session
-        return token
+        """Implement PreTokenProvider."""
+        return await self.auth.async_get_access_token()
 
-    async def async_get_sessions(self):
-        """Fetch the raw charging-session response."""
-        token = await self.async_get_access_token()
+    async def _get(self, path: str, params: dict[str, Any], token: str) -> tuple[int, Any]:
         http = self.auth.session
         if http is None:
             raise PREPointError("HTTP relace PRE Point nebyla inicializována.")
-        async with http.get(
-            f"{API_BASE}{SESSIONS_PATH}",
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Accept": "application/json",
-            },
-        ) as resp:
-            if resp.status == 401:
-                self.auth.access_token = None
-                self.auth.expiry = 0
-                token = await self.async_get_access_token()
-                async with http.get(
-                    f"{API_BASE}{SESSIONS_PATH}",
-                    headers={
-                        "Authorization": f"Bearer {token}",
-                        "Accept": "application/json",
-                    },
-                ) as retry_resp:
-                    if retry_resp.status >= 400:
-                        raise PREPointError(
-                            f"Endpoint historie vrátil HTTP {retry_resp.status}."
-                        )
-                    return await retry_resp.json(content_type=None)
-            if resp.status >= 400:
-                raise PREPointError(
-                    f"Endpoint historie vrátil HTTP {resp.status}."
-                )
-            return await resp.json(content_type=None)
+        try:
+            async with http.get(
+                f"{API_BASE}{path}",
+                params=params,
+                headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+                timeout=aiohttp.ClientTimeout(total=REQUEST_TIMEOUT),
+            ) as resp:
+                if resp.status == 429:
+                    retry_after = resp.headers.get("Retry-After", "")
+                    raise PreRateLimitError(int(retry_after) if retry_after.isdigit() else None)
+                if resp.status >= 400:
+                    return resp.status, None
+                return resp.status, await resp.json(content_type=None)
+        except (aiohttp.ClientError, TimeoutError) as err:
+            raise PREPointError(
+                f"PRE API není dostupné: {err or type(err).__name__}"
+            ) from err
+
+    async def async_get_sessions(self, periods: int = HISTORY_PERIODS) -> Any:
+        """Fetch the raw charging-session response (current month + `periods` before)."""
+        params = {"periodsInPast": periods}
+        token = await self.async_get_access_token()
+        status, data = await self._get(SESSIONS_PATH, params, token)
+        if status == 401:
+            # Token rejected: drop it and ask for a fresh one, once.
+            self.auth.access_token = None
+            self.auth.expiry = 0
+            token = await self.async_get_access_token()
+            status, data = await self._get(SESSIONS_PATH, params, token)
+        if status >= 400:
+            raise PREPointError(f"Endpoint historie vrátil HTTP {status}.")
+        return data
 
     async def async_close(self) -> None:
         """Close the HTTP session."""
         await self.auth.async_close()
-        self.session = None

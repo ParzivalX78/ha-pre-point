@@ -2,83 +2,90 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
+from homeassistant.core import Event, HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import PREPointApi, PREPointError, PreAuthError
-from .const import DOMAIN
+from .api import PREPointApi
+from .const import CONF_PASSWORD, CONF_USERNAME, DOMAIN
+from .coordinator import (
+    PrePointConfigEntry,
+    PrePointHistoryCoordinator,
+    PrePointRuntimeData,
+    PrePointStationsCoordinator,
+    tracked_location_ids,
+)
+from .entity import account_identifier, location_identifier
+from .poi import PoiClient
+from .statistics import SessionArchive, async_clear_statistics
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.SENSOR]
-UPDATE_INTERVAL = timedelta(minutes=15)
 
 
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set up the integration."""
-    return True
-
-
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: PrePointConfigEntry) -> bool:
     """Set up a configured PRE Point account."""
-    api = PREPointApi(entry.data["username"], entry.data["password"])
+    poi = PoiClient(async_get_clientsession(hass))
+    stations = PrePointStationsCoordinator(hass, entry, poi)
+    # The public map first: if it is down, setup is retried before any sign-in.
+    await stations.async_config_entry_first_refresh()
 
-    async def update():
-        try:
-            return await api.async_get_sessions()
-        except PreAuthError as err:
-            if err.reauth_required:
-                raise ConfigEntryAuthFailed(str(err)) from err
-            raise UpdateFailed(str(err)) from err
-        except Exception as err:
-            raise UpdateFailed(f"PRE Point: {err}") from err
+    api = PREPointApi(entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD])
 
-    coordinator = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        name="PRE Point",
-        update_method=update,
-        update_interval=UPDATE_INTERVAL,
-    )
-
-    # Keep the entry loaded if the first login fails once. The API client
-    # retains its retry timer and the next login attempt is no earlier than
-    # 15 minutes later. A second failure raises ConfigEntryAuthFailed.
-    try:
-        initial_data = await api.async_get_sessions()
-    except PreAuthError as err:
-        if err.reauth_required:
-            await api.async_close()
-            raise ConfigEntryAuthFailed(str(err)) from err
-        _LOGGER.warning(
-            "PRE Point is temporarily unauthenticated; one retry is scheduled "
-            "after 15 minutes: %s",
-            err,
-        )
-        coordinator.async_set_updated_data(None)
-    except Exception as err:
+    async def _close(_: Event | None = None) -> None:
         await api.async_close()
-        raise ConfigEntryNotReady(f"PRE Point initial request failed: {err}") from err
-    else:
-        coordinator.async_set_updated_data(initial_data)
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
-        "api": api,
-        "coordinator": coordinator,
-    }
+    history = PrePointHistoryCoordinator(hass, entry, api)
+    await history.async_prepare()
+    # Not async_config_entry_first_refresh(): a temporary sign-in problem must
+    # keep the entry loaded, so the single retry in auth.py (15 minutes later)
+    # is not cut short by Home Assistant retrying the whole setup.
+    await history.async_refresh()
+    if isinstance(history.last_exception, ConfigEntryAuthFailed):
+        await _close()
+        raise history.last_exception
+    if not history.last_update_success:
+        _LOGGER.warning(
+            "PRE Point charging history is not available yet, retrying in %s",
+            history.update_interval,
+        )
+
+    entry.runtime_data = PrePointRuntimeData(
+        api=api, poi=poi, stations=stations, history=history
+    )
+    _remove_stale_devices(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    entry.async_on_unload(entry.add_update_listener(_async_reload))
+    entry.async_on_unload(_close)
+    # Entries are not unloaded when Home Assistant stops; close the session then too.
+    entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _close))
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload the configured entry."""
-    if await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        data = hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
-        if data:
-            await data["api"].async_close()
-        return True
-    return False
+def _remove_stale_devices(hass: HomeAssistant, entry: PrePointConfigEntry) -> None:
+    """Drop devices of locations the user no longer tracks."""
+    keep = {account_identifier(entry.entry_id)} | {
+        location_identifier(entry.entry_id, loc_id) for loc_id in tracked_location_ids(entry)
+    }
+    registry = dr.async_get(hass)
+    for device in dr.async_entries_for_config_entry(registry, entry.entry_id):
+        if not device.identifiers & keep:
+            registry.async_update_device(device.id, remove_config_entry_id=entry.entry_id)
+
+
+async def _async_reload(hass: HomeAssistant, entry: PrePointConfigEntry) -> None:
+    await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: PrePointConfigEntry) -> bool:
+    """Unload the configured entry (the session is closed by async_on_unload)."""
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: PrePointConfigEntry) -> None:
+    """Forget the session archive and statistics when the account is removed."""
+    await SessionArchive(hass, entry.entry_id).async_remove()
+    async_clear_statistics(hass)

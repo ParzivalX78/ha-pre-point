@@ -1,0 +1,206 @@
+[
+ {
+  "totalPrice": 0,
+  "rootCustomerId": "T00000",
+  "customerId": "T00000-K00000",
+  "event": {
+   "volume": 24155,
+   "duration": 7712,
+   "accessKey": "not-a-real-key",
+   "startTime": "2026-09-25T19:10:27+0200",
+   "attributes": [
+    {
+     "name": "conDur",
+     "value": "7712"
+    },
+    {
+     "name": "cdrId",
+     "value": "CDR-AC-SEP"
+    },
+    {
+     "name": "emtType",
+     "value": "rfid"
+    },
+    {
+     "name": "address",
+     "value": "Testovací 1"
+    },
+    {
+     "name": "zipCode",
+     "value": "10000"
+    },
+    {
+     "name": "city",
+     "value": "Testov"
+    },
+    {
+     "name": "country",
+     "value": "CZE"
+    },
+    {
+     "name": "cpId",
+     "value": "CZ*PRE*E1T0001*1"
+    },
+    {
+     "name": "cpType",
+     "value": "AC"
+    },
+    {
+     "name": "cpMaxSockPwr",
+     "value": "22.0"
+    },
+    {
+     "name": "cpo",
+     "value": "CZ*PRE"
+    }
+   ],
+   "type": "Electricity"
+  },
+  "rateResults": [
+   {
+    "chargedPrice": 0,
+    "period": "202609",
+    "chargedTime": 0,
+    "chargedVolume": 24155,
+    "chargeCode": "Usage.CZPRE.EnergyConsumption.AC.22000"
+   }
+  ],
+  "processingTime": "2026-09-25T19:10:27+0200"
+ },
+ {
+  "totalPrice": 0,
+  "rootCustomerId": "T00000",
+  "customerId": "T00000-K00000",
+  "event": {
+   "volume": 10264,
+   "duration": 3307,
+   "accessKey": "not-a-real-key",
+   "startTime": "2026-10-03T17:11:21+0200",
+   "attributes": [
+    {
+     "name": "conDur",
+     "value": "3307"
+    },
+    {
+     "name": "cdrId",
+     "value": "CDR-DC-OCT"
+    },
+    {
+     "name": "emtType",
+     "value": "rfid"
+    },
+    {
+     "name": "address",
+     "value": "Testovací 1"
+    },
+    {
+     "name": "zipCode",
+     "value": "10000"
+    },
+    {
+     "name": "city",
+     "value": "Testov"
+    },
+    {
+     "name": "country",
+     "value": "CZE"
+    },
+    {
+     "name": "cpId",
+     "value": "CZ*PRE*E1T0002*1"
+    },
+    {
+     "name": "cpType",
+     "value": "DC"
+    },
+    {
+     "name": "cpMaxSockPwr",
+     "value": "50.0"
+    },
+    {
+     "name": "cpo",
+     "value": "CZ*PRE"
+    }
+   ],
+   "type": "Electricity"
+  },
+  "rateResults": [
+   {
+    "chargedPrice": 0,
+    "period": "202610",
+    "chargedTime": 0,
+    "chargedVolume": 10264,
+    "chargeCode": "Usage.CZPRE.EnergyConsumption.DC.50000"
+   }
+  ],
+  "processingTime": "2026-10-03T17:11:21+0200"
+ },
+ {
+  "totalPrice": 0,
+  "rootCustomerId": "T00000",
+  "customerId": "T00000-K00000",
+  "event": {
+   "volume": 18453,
+   "duration": 6158,
+   "accessKey": "not-a-real-key",
+   "startTime": "2026-10-06T14:27:34+0200",
+   "attributes": [
+    {
+     "name": "conDur",
+     "value": "6158"
+    },
+    {
+     "name": "cdrId",
+     "value": "CDR-UFC-OCT"
+    },
+    {
+     "name": "emtType",
+     "value": "rfid"
+    },
+    {
+     "name": "address",
+     "value": "Testovací 1"
+    },
+    {
+     "name": "zipCode",
+     "value": "10000"
+    },
+    {
+     "name": "city",
+     "value": "Jinde"
+    },
+    {
+     "name": "country",
+     "value": "CZE"
+    },
+    {
+     "name": "cpId",
+     "value": "CZ*PRE*E1T0003*2"
+    },
+    {
+     "name": "cpType",
+     "value": "DC"
+    },
+    {
+     "name": "cpMaxSockPwr",
+     "value": "150.0"
+    },
+    {
+     "name": "cpo",
+     "value": "CZ*PRE"
+    }
+   ],
+   "type": "Electricity"
+  },
+  "rateResults": [
+   {
+    "chargedPrice": 0,
+    "period": "202610",
+    "chargedTime": 0,
+    "chargedVolume": 18453,
+    "chargeCode": "Usage.CZPRE.EnergyConsumption.DC.150000"
+   }
+  ],
+  "processingTime": "2026-10-06T14:27:34+0200"
+ }
+]

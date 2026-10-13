@@ -1,0 +1,114 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "PRE Point",
+        "description": "Sign in with your PRE Point (PRE CHARGE app) account.",
+        "data": {
+          "username": "E-mail",
+          "password": "Password"
+        }
+      },
+      "tariff": {
+        "title": "Your tariff",
+        "description": "PRE does not show prices, so they are calculated from your tariff. A session is priced when it first appears; you can change the prices later in the options.",
+        "data": {
+          "price_ac": "AC (up to 49 kW)",
+          "price_dc": "DC (up to 149 kW)",
+          "price_ufc": "UFC (above 149 kW)",
+          "monthly_fee": "Monthly fee"
+        }
+      },
+      "locations": {
+        "title": "Chargers to watch",
+        "description": "Places where you charged are pre-selected; PRE chargers around your home are listed too. Change the radius or the filter and submit to search again; submit unchanged to finish.",
+        "data": {
+          "locations": "Locations",
+          "radius": "Radius around home",
+          "query": "Filter by name"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Sign in again",
+        "description": "Automatic sign-in for {username} was stopped. Enter the password again.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "PRE rejected the e-mail or password.",
+      "pre_login_failed": "Signing in to PRE Point failed. See the Home Assistant log.",
+      "cannot_connect": "Could not reach the PRE API.",
+      "map_unavailable": "The public charger map is not available right now. You can finish without chargers and add them later.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This account is already configured.",
+      "reauth_successful": "Signed in again."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "PRE Point options",
+        "description": "Change the radius or the filter and submit to search for more chargers; submit unchanged to save.",
+        "data": {
+          "price_ac": "AC (up to 49 kW)",
+          "price_dc": "DC (up to 149 kW)",
+          "price_ufc": "UFC (above 149 kW)",
+          "monthly_fee": "Monthly fee",
+          "recalculate": "Recalculate earlier sessions with these prices",
+          "locations": "Watched chargers",
+          "radius": "Radius around home",
+          "query": "Filter by name",
+          "scan_interval": "Charger status update interval"
+        },
+        "data_description": {
+          "recalculate": "Otherwise the new prices only apply to new sessions."
+        }
+      }
+    },
+    "error": {
+      "map_unavailable": "The public charger map is not available right now."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "latest": {
+        "name": "Last session energy"
+      },
+      "last_session_cost": {
+        "name": "Last session cost"
+      },
+      "last_session_start": {
+        "name": "Last session start"
+      },
+      "month_energy": {
+        "name": "Energy this month"
+      },
+      "month_cost": {
+        "name": "Cost this month"
+      },
+      "sessions": {
+        "name": "Charging sessions"
+      },
+      "available_count": {
+        "name": "Available chargers",
+        "unit_of_measurement": "chargers"
+      },
+      "evse_status": {
+        "name": "{evse}",
+        "state": {
+          "available": "Available",
+          "charging": "Charging",
+          "reserved": "Reserved",
+          "blocked": "Blocked",
+          "out_of_order": "Out of order",
+          "unavailable": "Unavailable",
+          "unknown": "Unknown"
+        }
+      }
+    }
+  }
+}

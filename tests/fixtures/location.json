@@ -1,0 +1,66 @@
+{
+ "id": "CZT0001",
+ "name": [
+  {
+   "language": "de",
+   "text": "Test Hub"
+  },
+  {
+   "language": "en",
+   "text": "Test Hub"
+  }
+ ],
+ "operator": {
+  "id": "CZ*PRE",
+  "name": "Test operator"
+ },
+ "partner_name": "PRE",
+ "address": "Testovací 1",
+ "city": "Testov",
+ "coordinates": {
+  "longitude": "14.1",
+  "latitude": "50.1"
+ },
+ "evses": [
+  {
+   "evse_id": "CZ*PRE*E1T0001*1",
+   "status": "AVAILABLE",
+   "connectors": [
+    {
+     "id": "1",
+     "standard": "IEC_62196_T2",
+     "format": "SOCKET",
+     "power_type": "AC_3_PHASE",
+     "power_kw": 22
+    }
+   ]
+  },
+  {
+   "evse_id": "CZ*PRE*E1T0001*2",
+   "status": "CHARGING",
+   "connectors": [
+    {
+     "id": "1",
+     "standard": "IEC_62196_T2",
+     "format": "SOCKET",
+     "power_type": "AC_3_PHASE",
+     "power_kw": 22
+    }
+   ]
+  },
+  {
+   "evse_id": "CZ*PRE*E1T0001*3",
+   "status": "OUTOFORDER",
+   "connectors": [
+    {
+     "id": "1",
+     "standard": "IEC_62196_T2_COMBO",
+     "format": "CABLE",
+     "power_type": "DC",
+     "power_kw": 150
+    }
+   ]
+  }
+ ],
+ "time_zone": "Europe/Prague"
+}

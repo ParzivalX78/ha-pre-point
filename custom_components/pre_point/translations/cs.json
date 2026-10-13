@@ -1,0 +1,114 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "PRE Point",
+        "description": "Přihlášení účtem PRE Point (aplikace PRE CHARGE).",
+        "data": {
+          "username": "E-mail",
+          "password": "Heslo"
+        }
+      },
+      "tariff": {
+        "title": "Tvůj tarif",
+        "description": "PRE ceny nezobrazuje, proto se počítají podle tarifu. Nabíjení se ocení, když se poprvé objeví; ceny jde později změnit v možnostech integrace.",
+        "data": {
+          "price_ac": "AC (do 49 kW)",
+          "price_dc": "DC (do 149 kW)",
+          "price_ufc": "UFC (nad 149 kW)",
+          "monthly_fee": "Měsíční poplatek"
+        }
+      },
+      "locations": {
+        "title": "Sledované stanice",
+        "description": "Místa, kde jsi nabíjel, jsou předvybraná; níž jsou stanice PRE v okolí domova. Změň okruh nebo filtr a odešli pro nové hledání; odesláním beze změny nastavení dokončíš.",
+        "data": {
+          "locations": "Lokality",
+          "radius": "Okruh kolem domova",
+          "query": "Filtr podle názvu"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Přihlásit znovu",
+        "description": "Automatické přihlašování účtu {username} bylo zastaveno. Zadej heslo znovu.",
+        "data": {
+          "password": "Heslo"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "PRE odmítlo e-mail nebo heslo.",
+      "pre_login_failed": "Přihlášení do PRE Point selhalo. Podívej se do protokolu Home Assistantu.",
+      "cannot_connect": "Nelze se spojit s PRE API.",
+      "map_unavailable": "Veřejná mapa stanic teď není dostupná. Nastavení můžeš dokončit bez stanic a přidat je později.",
+      "unknown": "Neočekávaná chyba."
+    },
+    "abort": {
+      "already_configured": "Tento účet už je přidaný.",
+      "reauth_successful": "Přihlášení bylo obnoveno."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Možnosti PRE Point",
+        "description": "Změň okruh nebo filtr a odešli pro hledání dalších stanic; odesláním beze změny nastavení uložíš.",
+        "data": {
+          "price_ac": "AC (do 49 kW)",
+          "price_dc": "DC (do 149 kW)",
+          "price_ufc": "UFC (nad 149 kW)",
+          "monthly_fee": "Měsíční poplatek",
+          "recalculate": "Přepočítat těmito cenami i dřívější nabíjení",
+          "locations": "Sledované stanice",
+          "radius": "Okruh kolem domova",
+          "query": "Filtr podle názvu",
+          "scan_interval": "Interval aktualizace stavu stanic"
+        },
+        "data_description": {
+          "recalculate": "Jinak platí nové ceny jen pro nová nabíjení."
+        }
+      }
+    },
+    "error": {
+      "map_unavailable": "Veřejná mapa stanic teď není dostupná."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "latest": {
+        "name": "Poslední nabíjení"
+      },
+      "last_session_cost": {
+        "name": "Poslední nabíjení – cena"
+      },
+      "last_session_start": {
+        "name": "Poslední nabíjení – začátek"
+      },
+      "month_energy": {
+        "name": "Energie tento měsíc"
+      },
+      "month_cost": {
+        "name": "Útrata tento měsíc"
+      },
+      "sessions": {
+        "name": "Nabíjecí relace"
+      },
+      "available_count": {
+        "name": "Volné stojany",
+        "unit_of_measurement": "stojanů"
+      },
+      "evse_status": {
+        "name": "{evse}",
+        "state": {
+          "available": "Volný",
+          "charging": "Nabíjí",
+          "reserved": "Rezervovaný",
+          "blocked": "Blokovaný",
+          "out_of_order": "Mimo provoz",
+          "unavailable": "Nedostupný",
+          "unknown": "Neznámý"
+        }
+      }
+    }
+  }
+}
