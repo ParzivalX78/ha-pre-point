@@ -7,6 +7,7 @@ from custom_components.pre_point.models import (
     ChargingSession,
     Location,
     Tariff,
+    day_ends,
     hourly_totals,
     month_starts,
     normalize_status,
@@ -87,3 +88,10 @@ def test_location_and_status():
     assert normalize_status("INOPERATIVE") == "out_of_order"
     assert normalize_status("PLANNED") == "unavailable"
     assert normalize_status(None) == "unknown"
+
+
+def test_day_ends_give_every_day_a_row():
+    ends = day_ends(datetime(2026, 9, 29, 8, tzinfo=UTC), datetime(2026, 10, 2, 12, tzinfo=PRG))
+    assert [(d.month, d.day, d.hour) for d in ends] == [(9, 29, 23), (9, 30, 23), (10, 1, 23)]
+    rows = hourly_totals([], extra_hours=ends)
+    assert rows[1] == (datetime(2026, 9, 30, 21, tzinfo=UTC), 0.0, 0.0)

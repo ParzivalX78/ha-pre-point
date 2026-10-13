@@ -7,7 +7,10 @@ from datetime import datetime, timedelta
 import pytest
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.components.recorder import get_instance
-from homeassistant.components.recorder.statistics import statistics_during_period
+from homeassistant.components.recorder.statistics import (
+    statistic_during_period,
+    statistics_during_period,
+)
 from homeassistant.config_entries import SOURCE_USER, ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -150,6 +153,14 @@ async def test_statistics(
         (698.91, 431.51),
     ]
     assert _state(hass, entry, "month_cost").state == "431.51"
+
+    # "This month" as the statistic card asks for it (needs the daily rows).
+    october = datetime(2026, 9, 30, 22, tzinfo=dt_util.UTC)
+    for statistic_id, expected in ((STAT_ENERGY, 28.717), (STAT_COST, 431.51)):
+        result = await get_instance(hass).async_add_executor_job(
+            statistic_during_period, hass, october, None, statistic_id, {"change"}, None
+        )
+        assert result["change"] == expected
 
 
 async def test_rejected_password_asks_for_reauth(hass: HomeAssistant, mock_api, mock_poi) -> None:

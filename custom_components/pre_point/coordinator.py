@@ -11,7 +11,7 @@ import logging
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -169,6 +169,7 @@ class PrePointHistoryCoordinator(_BackoffCoordinator[HistoryData]):
         self.api = api
         self.archive = SessionArchive(hass, entry.entry_id)
         self._statistics_current = False
+        self._statistics_day: date | None = None
 
     async def async_prepare(self) -> None:
         """Load the archive so known sessions show even before the first refresh."""
@@ -221,17 +222,20 @@ class PrePointHistoryCoordinator(_BackoffCoordinator[HistoryData]):
         self.async_set_updated_data(self._snapshot(tariff))
 
     async def _async_update_statistics(self, tariff: Tariff) -> None:
+        now = dt_util.now()
         fee_changed = self.archive.statistics_fee != tariff.monthly_fee
-        if self._statistics_current and not fee_changed:
+        # Again on a new day too, for that day's row (see models.day_ends()).
+        if self._statistics_current and not fee_changed and self._statistics_day == now.date():
             return
         if fee_changed and self.archive.statistics_fee is not None:
             # Fee rows of the old value would stay behind otherwise.
             async_clear_statistics(self.hass)
         sessions = self.archive.sessions()
         async_import_statistics(
-            self.hass, sessions, monthly_fees(sessions, tariff.monthly_fee, dt_util.now())
+            self.hass, sessions, monthly_fees(sessions, tariff.monthly_fee, now), now
         )
         if fee_changed:
             self.archive.statistics_fee = tariff.monthly_fee
             await self.archive.async_save()
         self._statistics_current = True
+        self._statistics_day = now.date()

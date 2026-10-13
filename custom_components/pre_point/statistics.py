@@ -24,7 +24,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.storage import Store
 
 from .const import CURRENCY, DOMAIN
-from .models import ChargingSession, Tariff, hourly_totals, month_starts
+from .models import ChargingSession, Tariff, day_ends, hourly_totals, month_starts
 
 STAT_ENERGY = f"{DOMAIN}:charged_energy"
 STAT_COST = f"{DOMAIN}:charging_cost"
@@ -126,14 +126,17 @@ def async_import_statistics(
     hass: HomeAssistant,
     sessions: list[ChargingSession],
     fees: list[tuple[datetime, float]],
+    local_now: datetime,
 ) -> None:
-    """Write cumulative hourly energy and cost of all sessions (and fees)."""
+    """Write cumulative hourly energy and cost of all sessions and fees (plus a row per day)."""
     if not recorder_available(hass):
         return
+    started = [s.started_at for s in sessions if s.started_at is not None]
+    extra = day_ends(min(started), local_now) if started else []
     energy_rows: list[StatisticData] = []
     cost_rows: list[StatisticData] = []
     energy_sum = cost_sum = 0.0
-    for hour, energy, cost in hourly_totals(sessions, fees):
+    for hour, energy, cost in hourly_totals(sessions, fees, extra):
         energy_sum += energy
         cost_sum += cost
         energy_rows.append(StatisticData(start=hour, state=energy, sum=round(energy_sum, 3)))
