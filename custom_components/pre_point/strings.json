@@ -1,0 +1,31 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "PRE Point",
+        "description": "Přihlašovací údaje k PRE Point.",
+        "data": {
+          "username": "Uživatelské jméno / e-mail",
+          "password": "Heslo"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Znovu přihlásit PRE Point",
+        "description": "Automatické přihlášení bylo zastaveno. Ověřte účet a zadejte přihlašovací údaje znovu.",
+        "data": {
+          "username": "Uživatelské jméno / e-mail",
+          "password": "Heslo"
+        }
+      }
+    },
+    "error": {
+      "pre_login_failed": "Přihlášení nebo ověření PRE Point selhalo. Podívejte se do protokolu Home Assistantu.",
+      "cannot_connect": "Nelze se spojit s PRE API."
+    },
+    "abort": {
+      "already_configured": "Tento účet už je přidaný.",
+      "reauth_successful": "Přihlášení bylo obnoveno.",
+      "reauth_entry_not_found": "Konfigurační položka PRE Point nebyla nalezena."
+    }
+  }
+}

@@ -1,0 +1,10 @@
+DOMAIN = "pre_point"
+CONF_USERNAME = "username"
+CONF_PASSWORD = "password"
+
+AUTH_BASE = "https://auth-smatrics.verbund.com"
+REALM = "pre-b2c"
+CLIENT_ID = "mobile-app-cli"
+REDIRECT_URI = "cz.premobilita.auth://login"
+API_BASE = "https://b2c-service.smatrics-api.com"
+SESSIONS_PATH = "/api/v1/customers/customer/sessions?periodsInPast=11"

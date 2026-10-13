@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+# mitmproxy captures contain passwords and tokens - never commit them
+flows*
+*.flow
+*.mitm
+*.har
+secrets.yaml
+.env
