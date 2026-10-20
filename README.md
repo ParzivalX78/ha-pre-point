@@ -52,6 +52,12 @@ nabíjení.
 
 ### HACS
 
+Nejrychleji tlačítkem (otevře HACS ve tvém Home Assistantu):
+
+[![Otevřít v HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ParzivalX78&repository=ha-pre-point&category=integration)
+
+Nebo ručně:
+
 1. HACS → tři tečky → **Vlastní repozitáře**.
 2. Přidej URL tohoto repozitáře, kategorie **Integrace**.
 3. Nainstaluj „PRE Point“ a restartuj Home Assistant.
