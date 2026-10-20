@@ -2,6 +2,8 @@
 
 [![Podpoř mě na Ko-fi](https://img.shields.io/badge/Ko--fi-kup%20mi%20kafe-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/parzival59520)
 
+🇬🇧 **English:** [see below](#english).
+
 Neoficiální integrace nabíjecí sítě **PRE (PRE Point / aplikace PRE CHARGE)** do
 Home Assistantu:
 
@@ -47,6 +49,21 @@ přiřadí, když se poprvé objeví, a zůstane mu.** Změna tarifu v možnoste
 tak platí pro nová nabíjení; zaškrtnutím „Přepočítat i dřívější nabíjení“ se
 přepočítá všechno. Měsíční poplatek se připočítá ke každému měsíci od prvního
 nabíjení.
+
+## Upozornění a odpovědnost
+
+- Integrace je **neoficiální**. Nemá žádnou vazbu na PRE ani SMATRICS, nikdo z nich ji nevytvořil,
+  neschválil ani nepodporuje. Používá nedokumentovaná rozhraní, která se mohou kdykoli
+  změnit nebo přestat fungovat.
+- Používáš ji **výhradně na vlastní riziko a odpovědnost**. Autor neodpovídá za žádné škody
+  ani důsledky jejího použití, zejména za **omezení nebo zablokování účtu**, chybné nebo
+  chybějící údaje (např. o ceně nebo stavu nabíjení) ani za porušení podmínek služby.
+- Totéž platí pro **jakékoli úpravy kódu nebo nastavení**, hlavně pro zkrácení intervalu
+  dotazů pod výchozí hodnoty. Tím zvyšuješ zátěž serverů provozovatele i riziko zablokování
+  a odpovídáš za to sám.
+- Před použitím si přečti podmínky služby PRE Point / PRE CHARGE a sám posuď, jestli je s nimi
+  používání integrace v souladu.
+- Software je poskytován „tak, jak je“, bez jakékoli záruky (viz licence MIT).
 
 ## Instalace
 
@@ -191,3 +208,74 @@ Chyby a nápady piš do [Issues](../../issues).
 ## Licence
 
 MIT, viz [LICENSE](LICENSE).
+
+---
+
+## English
+
+Unofficial Home Assistant integration for the **PRE Point (PRE CHARGE app)** EV charging
+network in the Czech Republic. It is **read-only**: it never starts, stops or reserves charging.
+
+### What you get
+
+- **Charging station status** from the public map chargepre.smatrics.com (no sign-in):
+  number of free chargers and the state of each charger, with type, power, connectors and
+  your price per kWh in the attributes.
+- **Charging history of your account** with the **price calculated from your tariff**
+  (PRE does not show prices in the app): last session, energy and cost this month
+  (incl. the monthly fee), number of sessions.
+- **Long-term statistics** `pre_point:charged_energy` (kWh) and `pre_point:charging_cost`
+  (CZK) for monthly charts. The YAML for the charts is in the Czech part above.
+
+### Installation
+
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ParzivalX78&repository=ha-pre-point&category=integration)
+
+Or HACS → ⋮ → **Custom repositories** → add this repository's URL, category **Integration**,
+install „PRE Point“ and restart Home Assistant. Manual install: copy
+`custom_components/pre_point` to `config/custom_components/` and restart.
+
+### Setup
+
+**Settings → Devices & services → Add integration → PRE Point:**
+
+1. e-mail and password of your PRE Point account,
+2. your tariff (default PRE Point Start: AC 9, DC 12, UFC 14 CZK/kWh, monthly fee 0),
+3. stations to follow (places where you charged are preselected, PRE stations near home
+   are listed below them).
+
+Update interval: 10 minutes by default, 5–60 minutes allowed.
+
+### Gentle on the server
+
+One request per cycle for all followed stations, history once an hour, the refresh token is
+stored and reused, and the interval doubles (up to one hour, honouring `Retry-After`) after
+errors or HTTP 429. Station status and account history are independent of each other.
+
+### Disclaimer
+
+- This integration is **unofficial**. It is not affiliated with, endorsed or supported by
+  PRE (Pražská energetika) or SMATRICS. It uses undocumented interfaces that may change or stop working at any time.
+- You use it **entirely at your own risk and responsibility**. The author accepts no liability
+  for any damage or consequences of its use, in particular for **restriction or blocking of
+  your account**, wrong or missing data (e.g. prices or charging status), or breaches of the
+  service's terms of use.
+- The same applies to **any modifications of the code or settings**, especially shortening
+  the update interval below the defaults. That increases the load on the operator's servers
+  and the risk of being blocked, and it is your own responsibility.
+- Before using it, read the PRE Point / PRE CHARGE terms of service and decide for yourself whether
+  using this integration complies with them.
+- The software is provided "as is", without warranty of any kind (see the MIT license).
+
+### Support
+
+The integration is free and open source. If it saves you time or money, you can buy me a
+coffee ☕
+
+[![Buy me a coffee on Ko-fi](https://img.shields.io/badge/Ko--fi-buy%20me%20a%20coffee-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/parzival59520)
+
+Bugs and ideas: [Issues](../../issues).
+
+### License
+
+MIT, see [LICENSE](LICENSE).
