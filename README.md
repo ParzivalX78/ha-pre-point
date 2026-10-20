@@ -1,5 +1,7 @@
 # PRE Point pro Home Assistant
 
+[![Podpoř mě na Ko-fi](https://img.shields.io/badge/Ko--fi-kup%20mi%20kafe-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/parzival59520)
+
 Neoficiální integrace nabíjecí sítě **PRE (PRE Point / aplikace PRE CHARGE)** do
 Home Assistantu:
 
@@ -170,6 +172,15 @@ pytest
 
 Testy používají jen smyšlená data a přihlášení nahrazují atrapou. **Záznamy provozu
 (mitmproxy apod.) do repozitáře nikdy nedávej**, obsahují heslo a tokeny.
+
+## Podpora
+
+Integrace je zdarma a open source. Jestli ti šetří čas nebo peníze, můžeš mi
+koupit kafe ☕
+
+[![Podpoř mě na Ko-fi](https://img.shields.io/badge/Ko--fi-kup%20mi%20kafe-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/parzival59520)
+
+Chyby a nápady piš do [Issues](../../issues).
 
 ## Licence
 
