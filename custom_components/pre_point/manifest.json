@@ -4,7 +4,9 @@
   "after_dependencies": [
     "recorder"
   ],
-  "codeowners": [],
+  "codeowners": [
+    "@ParzivalX78"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/ParzivalX78/ha-pre-point",
   "integration_type": "service",

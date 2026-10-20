@@ -48,8 +48,20 @@ nabíjení.
 
 ## Instalace
 
+### HACS
+
+1. HACS → tři tečky → **Vlastní repozitáře**.
+2. Přidej URL tohoto repozitáře, kategorie **Integrace**.
+3. Nainstaluj „PRE Point“ a restartuj Home Assistant.
+
+### Ručně
+
 Zkopíruj `custom_components/pre_point` do `config/custom_components/` a restartuj
-Home Assistant. Pak **Nastavení → Zařízení a služby → Přidat integraci → PRE Point**:
+Home Assistant.
+
+## Nastavení
+
+**Nastavení → Zařízení a služby → Přidat integraci → PRE Point:**
 
 1. e-mail a heslo k účtu PRE Point,
 2. tarif,
