@@ -13,9 +13,6 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # ikona je přímo v integraci (custom_components/<domain>/brand/, HA ≥ 2026.3),
-          # ne v repozitáři home-assistant/brands
-          ignore: brands
 
   hassfest:
     name: Hassfest
